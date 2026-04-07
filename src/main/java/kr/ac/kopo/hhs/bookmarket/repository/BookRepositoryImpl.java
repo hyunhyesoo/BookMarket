@@ -1,10 +1,11 @@
 package kr.ac.kopo.hhs.bookmarket.repository;
 
+import com.sun.nio.sctp.IllegalReceiveException;
 import kr.ac.kopo.hhs.bookmarket.domain.Book;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -42,7 +43,7 @@ public class BookRepositoryImpl implements BookRepository {
                 "혁신의 중심-실리콘밸리, 정책의 중심-워싱턴 D.C., 미래 산업의 중심-텍사스\n" +
                 "기업과 사람을 만나고 현장에서 직접 발견한 투자 인사이트!");
         book3.setPublisher("비즈니스북스");
-        book3.setCategory("경제/경영");
+        book3.setCategory("경제,경영");
         book3.setAuthor("토스증권 리서치센터");
         book3.setUnitPrice(new BigDecimal(18000));
         book3.setReleaseDate("2026/03/23");
@@ -55,5 +56,61 @@ public class BookRepositoryImpl implements BookRepository {
     @Override
     public List<Book> getAllBookList(){
         return listOfBooks;
+    }
+
+    @Override
+    public List<Book> getBookListByCategory(String category) {
+        List<Book> booksByCategory = new ArrayList<Book>();
+        for (Book searchBook : listOfBooks) {
+            if (category.equalsIgnoreCase(searchBook.getCategory()))
+                booksByCategory.add(searchBook);
+        }
+
+        return booksByCategory;
+    }
+
+    @Override
+    public Set<Book> getBookListByFilter(Map<String, List<String>> filter) {
+        Set<Book> booksByCategory = new HashSet<Book>();
+        Set<Book> booksByPublisher = new HashSet<Book>();
+        Set<String> booksByFiler = filter.keySet();
+
+        if (booksByFiler.contains("publisher")){
+            for (String publisherName : filter.get("publisher")){
+                for (Book searchBook : listOfBooks){
+                    if (publisherName.equalsIgnoreCase(searchBook.getPublisher()))
+                        booksByPublisher.add(searchBook);
+                }
+            }
+        }
+
+        if (booksByFiler.contains("category")){
+            for (String category : filter.get("category")){
+                List<Book> list = getBookListByCategory(category);
+                booksByCategory.addAll(list);
+            }
+        }
+
+        booksByCategory.retainAll(booksByPublisher);
+
+
+        return booksByCategory;
+    }
+
+    @Override
+    public Book getBookById(String bookId) {
+        Book book = null;
+        for (Book searchBook: listOfBooks) {
+            if(searchBook != null && searchBook.getBookId() != null && searchBook.getBookId().equals(bookId)){
+                book = searchBook;
+                break;
+            }
+        }
+
+        if (book == null) {
+            throw new IllegalArgumentException("도서ID가 " + bookId + "인 도서는 찾을 수가 없습니다.");
+        }
+
+        return book;
     }
 }
