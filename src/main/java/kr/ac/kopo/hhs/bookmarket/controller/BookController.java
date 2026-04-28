@@ -37,7 +37,7 @@ public class BookController {
     @GetMapping("/{category}")
     public String requestBooksByCategory(@PathVariable("category") String category, Model model) {
         List<Book> booksByCategory = bookService.getBookListByCategory(category);
-        model.addAttribute("booklist", booksByCategory);
+        model.addAttribute("bookList", booksByCategory);
         return "books";
     }
 
@@ -46,6 +46,22 @@ public class BookController {
         Set<Book> booksByFilter = bookService.getBookListByFilter(bookFilter);
         model.addAttribute("bookList", booksByFilter);
         return "books";
+    }
+
+    @GetMapping("/add")
+    public String requestAddBookForm(){
+        return "addBook";
+    }
+
+    @PostMapping("add")
+    public String submitAddNewBook(@ModelAttribute Book book) {
+        bookService.setNewBook(book);
+        return "redirect:/books";
+    }
+
+    @ModelAttribute
+    public void addAttribute(Model model) {
+        model.addAttribute("addTitle", "신규 도서 등록");
     }
 
     @GetMapping("/all")
