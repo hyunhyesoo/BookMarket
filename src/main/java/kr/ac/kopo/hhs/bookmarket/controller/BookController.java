@@ -60,18 +60,19 @@ public class BookController {
         return "addBook";
     }
 
-    @PostMapping("add")
-    public String submitAddNewBook(@ModelAttribute Book book) {
+    @PostMapping("/add")
+    public String submitAddNewBook(@ModelAttribute Book book){
         MultipartFile bookImage = book.getBookImage();
         String saveName = bookImage.getOriginalFilename();
         File saveFile = new File(fileDir, saveName);
-        if (bookImage != null && !bookImage.isEmpty()) {
+        if(bookImage != null && !bookImage.isEmpty()){
             try {
                 bookImage.transferTo(saveFile);
             } catch (IOException e) {
-                throw new RuntimeException("이미지가 업로드되지 않았습니다");
+                throw new RuntimeException("이미지가 업로드 되지 않았습니다");
             }
         }
+
         book.setFileName(saveName);
         bookService.setNewBook(book);
         return "redirect:/books";
