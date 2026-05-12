@@ -3,12 +3,16 @@ package kr.ac.kopo.hhs.bookmarket.controller;
 import kr.ac.kopo.hhs.bookmarket.domain.Book;
 import kr.ac.kopo.hhs.bookmarket.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import tools.jackson.core.io.SegmentedStringWriter;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,15 +23,18 @@ public class BookController {
     @Autowired
     private BookService bookService;
 
+    @Value("${file.uploadDir}")
+    String fileDir;
+
     @RequestMapping(method = RequestMethod.GET)
-    public String requestBookList(Model model){
+    public String requestBookList(Model model) {
         List<Book> listOfBooks = bookService.getAllBookList();
         model.addAttribute("bookList", listOfBooks);
         return "books";
     }
 
     @GetMapping("/book")
-    public String requestBookId(@RequestParam("id") String bookId, Model model){
+    public String requestBookId(@RequestParam("id") String bookId, Model model) {
         Book book = bookService.getBookById(bookId);
         model.addAttribute("book", book);
 
@@ -42,19 +49,30 @@ public class BookController {
     }
 
     @GetMapping("/filter/{bookFilter}")
-    public String requestBookByFilter(@MatrixVariable(pathVar = "bookFilter")Map<String, List<String>> bookFilter, Model model){
+    public String requestBookByFilter(@MatrixVariable(pathVar = "bookFilter") Map<String, List<String>> bookFilter, Model model) {
         Set<Book> booksByFilter = bookService.getBookListByFilter(bookFilter);
         model.addAttribute("bookList", booksByFilter);
         return "books";
     }
 
     @GetMapping("/add")
-    public String requestAddBookForm(){
+    public String requestAddBookForm() {
         return "addBook";
     }
 
     @PostMapping("add")
     public String submitAddNewBook(@ModelAttribute Book book) {
+        MultipartFile bookImage = book.getBookImage();
+        String saveName = bookImage.getOriginalFilename();
+        File saveFile = new File(fileDir, saveName);
+        if (bookImage != null && !bookImage.isEmpty()) {
+            try {
+                bookImage.transferTo(saveFile);
+            } catch (IOException e) {
+                throw new RuntimeException("이미지가 업로드되지 않았습니다");
+            }
+        }
+        book.setFileName(saveName);
         bookService.setNewBook(book);
         return "redirect:/books";
     }
