@@ -1,14 +1,16 @@
 package kr.ac.kopo.hhs.bookmarket.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import kr.ac.kopo.hhs.bookmarket.domain.Book;
 import kr.ac.kopo.hhs.bookmarket.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
@@ -29,6 +31,8 @@ public class BookController {
 
     @Value("${file.uploadDir}")
     String fileDir;
+    @Autowired
+    private ResourceLoader resourceLoader;
 
     @RequestMapping(method = RequestMethod.GET)
     public String requestBookList(Model model){
@@ -59,40 +63,25 @@ public class BookController {
     }
 
     @GetMapping("/add")
-    public String requestAddBookForm(){
+    public String requestAddBookForm(Model model){
+        model.addAttribute("book", new Book());
         return "addBook";
     }
 
-//    @PostMapping("/add")
-//    public String submitAddNewBook(@ModelAttribute Book book){
-//        MultipartFile bookImage = book.getBookImage();
-//
-//        String saveName = bookImage.getOriginalFilename();
-//        File saveFile = new File(fileDir, saveName);
-//        if (bookImage != null && !bookImage.isEmpty()){
-//            try {
-//                bookImage.transferTo(saveFile);
-//            } catch (IOException e) {
-//                throw new RuntimeException("이미지가 업로드 되지 않았습니다.");
-//            }
-//        }
-//        book.setFileName(saveName);
-//        bookService.setNewBook(book);
-//        return "redirect:/books";
-//    }
-
     @PostMapping("/add")
-    public String submitAddNewBook(@ModelAttribute Book book){
+    public String submitAddNewBook(@Valid @ModelAttribute Book book, BindingResult bindingResult){
+        if(bindingResult.hasErrors())
+            return "addBook";
+
         MultipartFile bookImage = book.getBookImage();
-//        System.out.println("파일사이즈" + bookImage.getSize());
+        System.out.println("파일사이즈" + bookImage.getSize());
         String saveName = bookImage.getOriginalFilename();
         File saveFile = new File(fileDir, saveName);
         if (bookImage != null && !bookImage.isEmpty()){
             try {
                 bookImage.transferTo(saveFile);
             } catch (IOException e) {
-                e.printStackTrace();
-//                throw new RuntimeException("이미지가 업로드 되지 않았습니다.");
+                throw new RuntimeException("이미지가 업로드 되지 않았습니다.");
             }
         }
         book.setFileName(saveName);
@@ -106,23 +95,22 @@ public class BookController {
     }
 
     @GetMapping("/download")
-    public void downloadBookimage(@RequestParam("file") String paramKey, HttpServletResponse response){
+    public void downloadBookImage(@RequestParam("file") String paramKey, HttpServletResponse response){
         File imgFile = new File(fileDir + paramKey);
         response.setContentType("application/download");
         response.setContentLength((int)imgFile.length());
-        response.setHeader("Content-Disposition", "attachment;filename=\"" + paramKey + "\"");
+        response.setHeader("Content-Disposition", "attachment;filename=\"" +paramKey + "\"");
 
         try {
-            OutputStream out = response.getOutputStream();
+            OutputStream fileOut = response.getOutputStream();
             FileInputStream fileIn = new FileInputStream(imgFile);
-            FileCopyUtils.copy(fileIn, out);
+            FileCopyUtils.copy(fileIn, fileOut);
             fileIn.close();
-            out.close();
+            fileOut.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-
 
     @GetMapping("/all")
     public ModelAndView requestAllBooks(){
