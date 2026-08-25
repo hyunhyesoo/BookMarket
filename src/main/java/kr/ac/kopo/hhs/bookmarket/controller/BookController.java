@@ -1,8 +1,10 @@
 package kr.ac.kopo.hhs.bookmarket.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import kr.ac.kopo.hhs.bookmarket.domain.Book;
+import kr.ac.kopo.hhs.bookmarket.exception.BookIdException;
 import kr.ac.kopo.hhs.bookmarket.service.BookService;
 import kr.ac.kopo.hhs.bookmarket.validator.BookValidator;
 import kr.ac.kopo.hhs.bookmarket.validator.UnitsInStockValidator;
@@ -133,5 +135,16 @@ public class BookController {
         modelAndView.addObject("bookList", list);
         modelAndView.setViewName("books");
         return modelAndView;
+    }
+
+    @ExceptionHandler(value = {BookIdException.class})
+    public ModelAndView handleError(HttpServletRequest request, BookIdException exception){
+        ModelAndView mav = new ModelAndView();
+        mav.addObject("invalidBookId", exception.getBookId());
+        mav.addObject("exception", exception);
+        mav.addObject("url", request.getRequestURL()+"?"+request.getQueryString());
+        mav.setViewName("errorBookId");
+
+        return mav;
     }
 }
