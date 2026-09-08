@@ -1,10 +1,12 @@
 package kr.ac.kopo.hhs.bookmarket.repository;
 
 import kr.ac.kopo.hhs.bookmarket.domain.Cart;
+import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Repository
 public class CartRepositoryImpl implements CartRepository{
     private Map<String, Cart> listOfCarts;
 
