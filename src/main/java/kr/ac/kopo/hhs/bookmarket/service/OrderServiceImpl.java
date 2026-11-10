@@ -12,6 +12,7 @@ public class OrderServiceImpl implements OrderService{
     @Autowired
     private BookRepository bookRepository;
 
+    @Autowired
     private OrderRepository orderRepository;
 
     @Override

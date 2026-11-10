@@ -9,10 +9,12 @@ import kr.ac.kopo.hhs.bookmarket.service.CartService;
 import kr.ac.kopo.hhs.bookmarket.service.OrderProService;
 import kr.ac.kopo.hhs.bookmarket.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.net.http.HttpRequest;
 import java.util.ArrayList;
@@ -96,6 +98,12 @@ public class OrderController {
         return "orderConfirmation";
     }
 
+    @PostMapping("/orderConfirmation")
+    public String requestConfirmationFinished(Model model){
+        model.addAttribute("order", order);
+        return "redirect:/order/orderFinished";
+    }
+
     @GetMapping("/orderFinished")
     public String requestOrderFinished(HttpServletRequest request, Model model){
         orderService.saveOrder(order);
@@ -116,5 +124,39 @@ public class OrderController {
             session.invalidate();
 
         return "orderCanceled";
+    }
+
+    @GetMapping("/list")
+    public String viewHomepage(Model model){
+        return viewpage(1, "orderId", "asc", model);
+    }
+    @GetMapping("/page")
+    public String viewpage(@RequestParam("pageNum") int pageNum,@RequestParam("sortField")String sortField,@RequestParam("sortDir")String sortDir, Model model){
+        Page<Order> page = orderProService.listAll(pageNum, sortField, sortDir);
+        List<Order> orderList = page.getContent();
+        model.addAttribute("currentPage", pageNum);
+        model.addAttribute("totalPages", page.getTotalPages());
+        model.addAttribute("totalItems", page.getTotalElements());
+        model.addAttribute("sortField", sortField);
+        model.addAttribute("sortDir", sortDir);
+        model.addAttribute("reserveSortDir", sortDir.equals("asc") ? "desc" : "asc");
+        model.addAttribute("orderList", orderList);
+        return "orderList";
+    }
+
+    @GetMapping("/view/{id}")
+    public ModelAndView viewOrder(@PathVariable(name="id") Long id) {
+        Order order = orderProService.get(id);
+        List<Book> listOfBooks = new ArrayList<Book>();
+        for (OrderItem item : order.getOrderItems().values()) {
+            String bookId = item.getBookId();
+            Book book = bookService.getBookById(bookId);
+            listOfBooks.add(book);
+        }
+        ModelAndView modelAndView = new ModelAndView("orderView");
+        modelAndView.addObject("order", order);
+        modelAndView.addObject("bookList", listOfBooks);
+
+        return modelAndView;
     }
 }
